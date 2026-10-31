@@ -132,7 +132,7 @@ enum SSHHub {
         }
 
         let auth = try makeAuth(server.auth, username: server.username)
-        let settings = SSHClientSettings(
+        var settings = SSHClientSettings(
             host: target.host,
             port: target.port,
             authenticationMethod: { auth },

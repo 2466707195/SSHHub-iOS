@@ -20,6 +20,9 @@ packages:
   Crypto:
     url: https://github.com/apple/swift-crypto
     from: 3.0.0
+  NIOSSH:
+    url: https://github.com/Wellz26/swift-nio-ssh
+    from: 0.3.4
 
 settings:
   base:
@@ -43,6 +46,7 @@ targets:
       - package: Citadel
       - package: SwiftTerm
       - package: Crypto
+      - package: NIOSSH
     info:
       path: SSHHub/Resources/Info.plist
       properties:

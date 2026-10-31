@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftTerm
 import Citadel
 import NIOCore
+import NIOSSH
 
 // MARK: - 交互终端（Citadel PTY + SwiftTerm 渲染）
 
@@ -105,7 +106,7 @@ struct TerminalRepresentable: UIViewRepresentable {
     func makeUIView(context: Context) -> TerminalView {
         let view = TerminalView(frame: .zero)
         view.backgroundColor = UIColor(red: 0.06, green: 0.07, blue: 0.10, alpha: 1)
-        view.delegate = vm
+        view.terminalDelegate = vm
         vm.attach(view: view)
         return view
     }
@@ -155,7 +156,7 @@ final class TerminalViewModel: NSObject, ObservableObject, TerminalViewDelegate 
 
                 // 2. SSH 连接
                 let auth = try SSHHub.makeAuth(server.auth, username: server.username)
-                let settings = SSHClientSettings(
+                var settings = SSHClientSettings(
                     host: best.endpoint.host,
                     port: best.endpoint.port,
                     authenticationMethod: { auth },
@@ -163,7 +164,7 @@ final class TerminalViewModel: NSObject, ObservableObject, TerminalViewDelegate 
                 )
                 settings.connectTimeout = .seconds(10)
                 let client = try await SSHClient.connect(to: settings)
-                guard !Task.isCancelled else { await client.close(); return }
+                guard !Task.isCancelled else { try? await client.close(); return }
                 self.client = client
                 self.connectedEndpoint = best.endpoint
                 self.infoText = """
@@ -262,7 +263,7 @@ final class TerminalViewModel: NSObject, ObservableObject, TerminalViewDelegate 
     func bell(source: TerminalView) {}
 
     func clipboardCopy(source: TerminalView, content: Data) {
-        UIPasteboard.general.setData(content)
+        UIPasteboard.general.setData(content, forPasteboardType: "public.data")
     }
 
     func clipboardRead(source: TerminalView) -> Data? {

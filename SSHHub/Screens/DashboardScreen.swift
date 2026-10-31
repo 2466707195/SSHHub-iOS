@@ -49,14 +49,14 @@ struct DashboardScreen: View {
                 HStack(spacing: 10) {
                     TonalButton(text: "刷新", systemIcon: "arrow.clockwise", enabled: !loading, expands: false) { load() }
                     DangerTonalButton(text: "断开", systemIcon: "xmark", expands: false) {
-                        Task { await client?.close() }
+                        Task { try? await client?.close() }
                         dismiss()
                     }
                 }
             }
         }
         .onAppear { load() }
-        .onDisappear { Task { await client?.close() } }
+        .onDisappear { Task { try? await client?.close() } }
     }
 
     // MARK: - 卡片
