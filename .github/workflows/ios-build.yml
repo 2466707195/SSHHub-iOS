@@ -1,0 +1,62 @@
+# =============================================================================
+# AuroraShowcase iOS —— GitHub Actions 云端构建
+#
+# ⚠️ 这个工程用了 iOS 18（Tab）和 iOS 26（glassEffect / GlassEffectContainer /
+#    ToolbarSpacer / UITabAccessory）的 API。**必须用 Xcode 26 编译**，
+#    它的 SDK 里才有这些符号。Xcode 15.4 的 SDK 是 iOS 17.5，那些类型根本不存在，
+#    @available 守卫也救不了（编译器看不到符号）。
+#
+#    macos-14 镜像默认是 Xcode 15.4 → 不够用。
+#    所以这里用 macos-15，并自动挑最新的 Xcode。
+# =============================================================================
+name: Build iOS (unsigned ipa)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build unsigned ipa
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 自动挑镜像里最新的 Xcode。本工程需要 iOS 26 SDK，即 Xcode 26+。
+      - name: Select newest Xcode
+        run: |
+          set -euo pipefail
+          XCODE="$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1 || true)"
+          if [ -z "$XCODE" ]; then
+            echo "::error::没有找到任何 Xcode"
+            exit 1
+          fi
+          echo "selected Xcode: $XCODE"
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i "iphoneos" || true
+
+      # 必须用固定版本：XcodeGen >= 2.42 会生成 Xcode 16 专属的工程格式(77)。
+      # 但 Xcode 26 能读旧格式(54)，所以 2.38.0 在这里是安全的。
+      - name: Install XcodeGen (pinned 2.38.0)
+        run: |
+          bash scripts/install-xcodegen.sh
+          echo "/usr/local/bin" >> "$GITHUB_PATH"
+
+      - name: Build unsigned ipa
+        run: bash scripts/build-unsigned-ipa.sh
+
+      - name: Upload ipa artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned-ipa
+          path: |
+            build/*.ipa
+            build/Info.json
+          if-no-files-found: error
+          retention-days: 30

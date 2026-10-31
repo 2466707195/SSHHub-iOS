@@ -3,11 +3,14 @@
 import base64, json, os, subprocess, sys, time, zipfile, io
 import urllib.request
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # 仓库根 = scripts/ 的上一级
 EXCLUDE_DIRS = {"build", "DerivedData", ".git", "SSHHub.xcodeproj"}
 EXCLUDE_FILES = {"Info.plist"}
 
 def gh_token():
+    t = os.environ.get("GITHUB_TOKEN")
+    if t and t.strip():
+        return t.strip()
     return subprocess.check_output(["gh", "auth", "token"], text=True).strip()
 
 TOKEN = gh_token()
@@ -84,8 +87,20 @@ def push():
     print(f"[4/4] 已推送到 main")
 
 def dispatch():
-    req("POST", f"{BASE}/actions/workflows/ios-build.yml/dispatches", {"ref": "main"})
-    print("已触发 workflow_dispatch")
+    # workflow 刚推上去时 GitHub 索引需要几秒，做重试
+    last = None
+    for i in range(12):
+        try:
+            req("POST", f"{BASE}/actions/workflows/ios-build.yml/dispatches", {"ref": "main"})
+            print("已触发 workflow_dispatch")
+            return
+        except RuntimeError as e:
+            last = e
+            print(f"  dispatch 第 {i+1} 次失败，等 10s 重试...")
+            time.sleep(10)
+    print(f"\n!!! dispatch 一直 404。请到仓库 Actions 页手动 Run workflow: {BASE.rsplit('/',1)[-1]}")
+    print(f"    详细错误: {last}")
+    sys.exit(3)
 
 def wait_build():
     print("等待构建启动（macOS runner 排队可能需要几分钟）...")
