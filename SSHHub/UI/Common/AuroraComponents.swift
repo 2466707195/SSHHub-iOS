@@ -118,10 +118,7 @@ extension AppTopBar where Actions == EmptyView {
 
 // MARK: - 底部操作条
 
-/// 底部悬浮操作条：实白底 + 细描边 + 柔化投影。
-///
-/// 虽然叫 "Glass"，但实现是**实白**：不要改成半透明，
-/// 半透明底会把阴影透上来，看起来像多垫了一层灰方块。
+/// 底部悬浮操作条：磨砂玻璃底 + 细描边 + 柔化投影。
 struct GlassBar<Content: View>: View {
 
     var contentPadding: EdgeInsets = EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12)
@@ -132,15 +129,13 @@ struct GlassBar<Content: View>: View {
             .padding(contentPadding)
             .background(
                 AuroraShape.bar
-                    .fill(Color.white)
+                    .fill(.ultraThinMaterial)
+                    .overlay(AuroraShape.bar.fill(Color.white.opacity(0.42)))
                     .shadow(color: Aurora.barShadow, radius: 10, x: 0, y: 4)
             )
             .overlay(
-                AuroraShape.bar.stroke(Aurora.line.opacity(0.55), lineWidth: 1)
+                AuroraShape.bar.stroke(Color.white.opacity(0.6), lineWidth: 1)
             )
-            // 浮层必须整块吞点击：空白处点击不能穿透到底下的列表项
-            .contentShape(AuroraShape.bar)
-            .onTapGesture { }
     }
 }
 

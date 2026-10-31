@@ -51,7 +51,7 @@ targets:
       path: SSHHub/Resources/Info.plist
       properties:
         CFBundleDisplayName: SSHHub
-        CFBundleShortVersionString: "1.0.0"
+        CFBundleShortVersionString: "1.0.1"
         CFBundleVersion: "1"
         CFBundleDevelopmentRegion: zh-Hans
         UILaunchScreen:
@@ -72,7 +72,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.duyufengkimi.sshhub
         PRODUCT_NAME: SSHHub
-        MARKETING_VERSION: "1.0.0"
+        MARKETING_VERSION: "1.0.1"
         CURRENT_PROJECT_VERSION: "1"
         TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

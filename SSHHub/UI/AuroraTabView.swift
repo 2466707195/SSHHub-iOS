@@ -159,12 +159,11 @@ struct AuroraLegacyTabBar<Value: Hashable, Content: View>: View {
             .padding(.vertical, 6)
             .background(
                 AuroraShape.bar
-                    .fill(Color.white)
+                    .fill(.ultraThinMaterial)
+                    .overlay(AuroraShape.bar.fill(Color.white.opacity(0.42)))
                     .shadow(color: Aurora.barShadow, radius: 10, x: 0, y: 4)
             )
-            .overlay(AuroraShape.bar.stroke(Aurora.line.opacity(0.55), lineWidth: 1))
-            .contentShape(AuroraShape.bar)
-            .onTapGesture { }
+            .overlay(AuroraShape.bar.stroke(Color.white.opacity(0.6), lineWidth: 1))
             .padding(.horizontal, AuroraMetrics.pagePadding)
             .padding(.top, 10)
             .padding(.bottom, 8)

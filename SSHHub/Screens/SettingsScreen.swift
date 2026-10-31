@@ -6,11 +6,17 @@ struct SettingsScreen: View {
 
     @EnvironmentObject private var store: ServerStore
 
+    @State private var formTarget: ServerProfile? = nil
+    @State private var showForm = false
+    @State private var deleteTarget: ServerProfile? = nil
+
     var body: some View {
         AuroraScreen {
-            AppTopBar(title: "设置", subtitle: "SSHHub v1.0.0")
+            AppTopBar(title: "设置", subtitle: "SSHHub v1.0.1")
         } content: {
             AuroraScrollView(bottomInset: 40) {
+                manageCard
+
                 SectionCard {
                     Label("三种线路是怎么工作的", systemImage: "point.3.connected.trianglepath.dotted")
                         .font(AuroraFont.titleSmall)
@@ -59,6 +65,78 @@ struct SettingsScreen: View {
                 }
             }
         }
+        .sheet(isPresented: $showForm, onDismiss: { formTarget = nil }) {
+            if let target = formTarget {
+                ServerFormScreen(server: target)
+                    .environmentObject(store)
+            }
+        }
+        .confirmationDialog(
+            "删除「\(deleteTarget?.title ?? "")」？",
+            isPresented: Binding(
+                get: { deleteTarget != nil },
+                set: { if !$0 { deleteTarget = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("删除", role: .destructive) {
+                if let target = deleteTarget { store.remove(target) }
+                deleteTarget = nil
+            }
+            Button("取消", role: .cancel) { deleteTarget = nil }
+        } message: {
+            Text("此操作不可撤销。")
+        }
+    }
+
+    // MARK: 服务器管理卡片
+
+    private var manageCard: some View {
+        SectionCard {
+            HStack(spacing: 10) {
+                Label("服务器管理", systemImage: "server.rack")
+                    .font(AuroraFont.titleSmall)
+                    .foregroundStyle(Aurora.ink)
+                Spacer()
+                SmallTonalButton(text: "全部测速", systemIcon: "bolt.horizontal", action: { store.probeAll() })
+            }
+            Spacer().frame(height: 6)
+
+            if store.servers.isEmpty {
+                Text("还没有服务器，点下面按钮添加第一台。")
+                    .font(AuroraFont.bodySmall)
+                    .foregroundStyle(Aurora.inkSoft)
+            } else {
+                ForEach(store.servers) { server in
+                    HStack(spacing: 10) {
+                        Monogram(name: server.title, tone: Aurora.brand, size: 34)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(server.title)
+                                .font(AuroraFont.labelMedium)
+                                .foregroundStyle(Aurora.ink)
+                                .lineLimit(1)
+                            Text("\(server.endpoints.count) 条线路")
+                                .font(AuroraFont.labelSmall)
+                                .foregroundStyle(Aurora.muted)
+                        }
+                        Spacer()
+                        SmallTonalButton(text: "编辑", systemIcon: "pencil", action: { openForm(server) })
+                        SmallDangerButton(text: "删除", action: { deleteTarget = server })
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+
+            Spacer().frame(height: 12)
+            PrimaryButton(text: "添加服务器", systemIcon: "plus") {
+                openForm(ServerProfile())
+            }
+        }
+    }
+
+    private func openForm(_ server: ServerProfile) {
+        formTarget = server
+        showForm = true
     }
 
     private func lineRow(icon: String, color: Color, title: String, desc: String) -> some View {

@@ -70,6 +70,10 @@ struct ServerProfile: Codable, Identifiable, Equatable {
 final class ServerStore: ObservableObject {
 
     @Published var servers: [ServerProfile] = [] { didSet { persist() } }
+    /// 线路测速结果：serverId -> 各线路探测结果
+    @Published var probes: [UUID: [EndpointProbeResult]] = [:]
+    /// 正在测速的服务器
+    @Published var probing: Set<UUID> = []
 
     private static var fileURL: URL {
         let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -102,6 +106,23 @@ final class ServerStore: ObservableObject {
 
     func remove(_ server: ServerProfile) {
         servers.removeAll { $0.id == server.id }
+        probes[server.id] = nil
+    }
+
+    /// 测一台服务器的所有线路
+    func probe(_ server: ServerProfile) {
+        guard !server.endpoints.isEmpty, !probing.contains(server.id) else { return }
+        probing.insert(server.id)
+        Task {
+            let result = await LineProbe.probeAll(server.endpoints)
+            self.probes[server.id] = result
+            self.probing.remove(server.id)
+        }
+    }
+
+    /// 全部服务器测速
+    func probeAll() {
+        for server in servers { probe(server) }
     }
 
     /// 首次启动的示例数据（占位密码，用户需在 App 内填写真实凭证）
